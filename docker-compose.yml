@@ -1,0 +1,41 @@
+version: '3'
+services:
+  frontend:
+    tty: true
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./frontend/:/app/
+
+  backend:
+    tty: true
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - ./backend/:/run/
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+
+  database:
+    image: mysql:8.0
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 1s
+      retries: 50
+      start_period: 3s
+      timeout: 20s
+    volumes:
+      - ./database/db:/var/lib/mysql #初期データをマウントする場所
+    ports:
+      - "3306:3306"
+    env_file:
+      - .env
